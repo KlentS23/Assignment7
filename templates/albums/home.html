@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Luminary — Discover{% endblock %}
+{% block content %}
+
+{% if not search_query and not request.user.is_authenticated %}
+<div style="text-align:center;padding:5rem 2rem 3rem;position:relative;overflow:hidden;">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(167,139,250,0.12) 0%,transparent 65%);pointer-events:none;"></div>
+  <div style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);border-radius:24px;padding:0.35rem 1rem;font-size:0.8rem;color:var(--accent);margin-bottom:1.5rem;letter-spacing:0.05em;text-transform:uppercase;">✦ Illuminate your moments</div>
+  <h1 style="font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;line-height:1.05;letter-spacing:-0.03em;margin-bottom:1.25rem;">
+    Where photos<br>become <span style="background:linear-gradient(135deg,#a78bfa,#e879f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">luminous</span>
+  </h1>
+  <p style="color:var(--text-muted);max-width:460px;margin:0 auto 2.5rem;font-size:1.05rem;line-height:1.7;">
+    A premium space to curate and share your photographic vision with the world.
+  </p>
+  <div class="flex gap-2 items-center" style="justify-content:center;">
+    <a href="{% url 'accounts:register' %}" class="btn btn-primary">Start for free</a>
+    <a href="{% url 'accounts:login' %}" class="btn btn-ghost">Sign in</a>
+  </div>
+</div>
+{% endif %}
+
+<div class="page-header">
+  <div>
+    <h2 class="page-title">
+      {% if search_query %}Results for "{{ search_query }}"
+      {% elif request.user.is_authenticated %}Your Gallery
+      {% else %}Discover Albums{% endif %}
+    </h2>
+    <p class="page-subtitle">{{ page_obj.paginator.count }} album{{ page_obj.paginator.count|pluralize }}</p>
+  </div>
+  {% if request.user.is_authenticated %}
+    <a href="{% url 'albums:album-create' %}" class="btn btn-primary">+ New Album</a>
+  {% endif %}
+</div>
+
+{% if albums %}
+  <div class="album-grid">
+    {% for album in albums %}
+    <a href="{% url 'albums:album-detail' album.pk %}" class="album-card">
+      {% if album.cover %}
+        <img class="album-cover" src="{{ album.cover.url }}" alt="{{ album.title }}" loading="lazy">
+      {% else %}
+        <div class="album-cover-placeholder">✦</div>
+      {% endif %}
+      <div class="album-info">
+        <div class="album-title">{{ album.title }}</div>
+        <div class="album-meta">
+          <span>{{ album.photo_count }} photo{{ album.photo_count|pluralize }}</span>
+          <span class="badge {% if album.visibility == 'public' %}badge-green{% else %}badge-gray{% endif %}">{{ album.visibility|capfirst }}</span>
+          {% if album.owner == request.user %}<span class="badge badge-gold">Mine</span>{% endif %}
+        </div>
+        <div class="album-meta mt-1" style="font-size:0.73rem;">by {{ album.owner.username }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <div class="flex gap-1 items-center" style="justify-content:center;margin-top:2.5rem;">
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-ghost btn-sm">← Prev</a>{% endif %}
+    <span class="text-muted" style="font-size:0.85rem;">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-ghost btn-sm">Next →</a>{% endif %}
+  </div>
+  {% endif %}
+
+{% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">✦</div>
+    <h3>{% if search_query %}Nothing found{% else %}No albums yet{% endif %}</h3>
+    <p class="mt-1">{% if search_query %}Try a different query.{% elif request.user.is_authenticated %}Create your first album to begin.{% else %}Sign up to get started.{% endif %}</p>
+    {% if request.user.is_authenticated and not search_query %}
+      <a href="{% url 'albums:album-create' %}" class="btn btn-primary mt-3">Create Album</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}
